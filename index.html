@@ -1,0 +1,1725 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D Space Shooter</title>
+    <script src="assets/tailwind.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* bg-gray-900 */
+            color: #E5E7EB; /* text-gray-200 */
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .menu-container {
+            background-color: rgba(17, 24, 39, 0.9); /* bg-gray-900 with opacity */
+            padding: 2rem;
+            border-radius: 0.75rem; /* rounded-xl */
+            text-align: center;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); /* shadow-blue-500/50 */
+            border: 1px solid rgba(59, 130, 246, 0.3); /* border-blue-500/30 */
+        }
+
+        .menu-title {
+            font-size: 2.25rem; /* text-4xl */
+            font-weight: bold;
+            color: #60A5FA; /* text-blue-400 */
+            text-shadow: 0 0 10px #60A5FA;
+            margin-bottom: 1.5rem;
+        }
+
+        .menu-button {
+            background-color: #3B82F6; /* bg-blue-600 */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem; /* rounded-lg */
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 0.5rem;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .menu-button:hover {
+            background-color: #2563EB; /* bg-blue-700 */
+            transform: translateY(-2px);
+            box-shadow: 0 0 15px #60A5FA, 0 6px 12px rgba(0, 0, 0, 0.2);
+            border-color: #93C5FD; /* border-blue-300 */
+        }
+        
+        .menu-button.locked {
+            background-color: #4B5563; /* bg-gray-600 */
+            color: #9CA3AF; /* text-gray-400 */
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        .menu-button.locked:hover {
+            background-color: #4B5563;
+            transform: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-color: transparent;
+        }
+
+        .game-info-bar {
+            position: absolute;
+            width: 100%;
+            padding: 0.5rem 1rem;
+            font-size: 1rem; /* text-lg */
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            color: white;
+            text-shadow: 1px 1px 2px black;
+            z-index: 10;
+        }
+        
+        .game-info-bar.top {
+            top: 0;
+        }
+        .game-info-bar.bottom {
+            bottom: 0;
+        }
+
+        #gameCanvas {
+            display: block;
+            background-color: #0c0c1e; /* Dark space background */
+            width: 100%;
+            height: 100%;
+            cursor: none; /* Hide default cursor over canvas */
+        }
+
+        .overlay-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            z-index: 20;
+            color: white;
+            padding: 1rem;
+        }
+
+        .overlay-screen h2 {
+            font-size: 2.5rem; /* text-4xl */
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 10px white;
+        }
+        
+        .overlay-screen p {
+            font-size: 1.25rem; /* text-xl */
+        }
+
+        #gameOverScreen {
+            background: radial-gradient(circle, rgba(220,38,38,0.8) 0%, rgba(0,0,0,0.9) 70%);
+        }
+        #gameOverScreen h2 {
+            color: #F87171; /* text-red-400 */
+            text-shadow: 0 0 15px #F87171;
+            animation: pulseGlow 1.5s infinite alternate;
+        }
+
+        @keyframes pulseGlow {
+            from { text-shadow: 0 0 10px #F87171, 0 0 20px #F87171; }
+            to { text-shadow: 0 0 20px #DC2626, 0 0 30px #DC2626; } /* red-600 */
+        }
+        
+        .icon-button {
+            background: rgba(59, 130, 246, 0.7); /* bg-blue-500 with opacity */
+            border: none;
+            border-radius: 0.375rem; /* rounded-md */
+            padding: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .icon-button:hover {
+            background: rgba(37, 99, 235, 0.9); /* bg-blue-700 with opacity */
+        }
+        .icon-button svg {
+            width: 24px;
+            height: 24px;
+            fill: white;
+        }
+
+        #confirmationModal {
+            background-color: rgba(17, 24, 39, 0.95); /* bg-gray-900 with opacity */
+            border: 1px solid #F87171; /* border-red-400 */
+        }
+        #confirmationModal h2 {
+            color: #F87171; /* text-red-400 */
+        }
+        #confirmationModal p {
+            color: #FCA5A5; /* text-red-300 */
+        }
+
+        .scrollable-grid {
+            max-height: 60vh;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 1rem;
+            padding: 1rem;
+            background: rgba(31, 41, 55, 0.5); /* bg-gray-700 with opacity */
+            border-radius: 0.5rem; /* rounded-lg */
+        }
+        
+        /* Custom scrollbar for webkit browsers */
+        .scrollable-grid::-webkit-scrollbar {
+            width: 8px;
+        }
+        .scrollable-grid::-webkit-scrollbar-track {
+            background: rgba(55, 65, 81, 0.5); /* bg-gray-600 with opacity */
+            border-radius: 10px;
+        }
+        .scrollable-grid::-webkit-scrollbar-thumb {
+            background: #3B82F6; /* bg-blue-600 */
+            border-radius: 10px;
+        }
+        .scrollable-grid::-webkit-scrollbar-thumb:hover {
+            background: #2563EB; /* bg-blue-700 */
+        }
+
+        #touchControlsOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5; /* Below game info, above canvas technically but transparent */
+            pointer-events: none; /* Allow clicks to pass through to canvas unless specific areas are active */
+        }
+
+        .touch-control-area {
+            position: absolute;
+            pointer-events: auto; /* Enable touch events for these areas */
+            /* For debugging: border: 1px dashed yellow; */
+        }
+        #touchLeft {
+            left: 0;
+            top: 0;
+            width: 50%;
+            height: 80%; /* Full height minus fire zone */
+        }
+        #touchRight {
+            right: 0;
+            top: 0;
+            width: 50%;
+            height: 80%;
+        }
+        #touchFire {
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 20%;
+        }
+        .health-bar {
+            height: 5px;
+            background-color: green;
+            border: 1px solid #333;
+        }
+        .health-bar-bg {
+            background-color: red;
+            height: 5px;
+            border: 1px solid #333;
+        }
+
+
+    </style>
+</head>
+<body>
+    <div id="gameContainer" class="relative w-full h-full max-w-screen-lg max-h-screen-md aspect-[16/9]">
+        <!-- Main Menu -->
+        <div id="startMenu" class="menu-container absolute inset-0 flex flex-col justify-center items-center">
+            <h1 class="menu-title">Space Shooter</h1>
+            <button id="endlessModeBtn" class="menu-button">Endless Mode</button>
+            <button id="levelsModeBtn" class="menu-button">Levels Mode</button>
+            <button id="howToPlayBtn" class="menu-button">How to Play</button>
+            <button id="openSettingsBtn" class="menu-button">SETTINGS</button>
+        </div>
+
+        <!-- How to Play Screen -->
+        <div id="howToPlayMenu" class="menu-container absolute inset-0 flex-col justify-center items-center p-8 hidden">
+            <h1 class="menu-title">How to Play</h1>
+            <div class="text-left max-w-md mx-auto space-y-3">
+                <p><strong>Objective:</strong> Destroy incoming alien ships and bosses. Survive as long as possible or complete all levels.</p>
+                <p><strong>Keyboard Controls:</strong></p>
+                <ul class="list-disc list-inside ml-4">
+                    <li><strong>WASD / Arrow Keys:</strong> Move player ship</li>
+                    <li><strong>Spacebar:</strong> Continuous Fire</li>
+                    <li><strong>P:</strong> Pause / Resume Game</li>
+                </ul>
+                <p><strong>Touch Controls:</strong></p>
+                 <ul class="list-disc list-inside ml-4">
+                    <li><strong>Tap/Hold Left Half of Screen:</strong> Move Left</li>
+                    <li><strong>Tap/Hold Right Half of Screen:</strong> Move Right</li>
+                    <li><strong>Tap/Hold Bottom 20% of Screen:</strong> Continuous Fire</li>
+                </ul>
+                <p><strong>Endless Mode:</strong> Face continuous, increasingly difficult waves of aliens and bosses. Aim for the highest score!</p>
+                <p><strong>Levels Mode:</strong> Progress through 20 distinct levels, each with 5 waves and a boss battle. Unlock new levels by defeating bosses.</p>
+            </div>
+            <button id="backToMainFromHowToPlayBtn" class="menu-button mt-6">Back to Main Menu</button>
+        </div>
+
+        <!-- Level Select Screen -->
+        <div id="levelSelectMenu" class="menu-container absolute inset-0 flex-col justify-center items-center p-4 hidden">
+            <h1 class="menu-title">Select Level</h1>
+            <div id="levelGrid" class="scrollable-grid w-full mb-4">
+                <!-- Level buttons will be generated here by JavaScript -->
+            </div>
+            <div class="flex space-x-4">
+                <button id="backToMainFromLevelSelectBtn" class="menu-button">Back to Main Menu</button>
+                <button id="advancedOptionsBtn" class="menu-button">Advanced Options</button>
+            </div>
+        </div>
+        
+        <!-- Advanced Options Screen -->
+        <div id="advancedOptionsMenu" class="menu-container absolute inset-0 flex-col justify-center items-center hidden">
+            <h1 class="menu-title">Advanced Options</h1>
+            <p class="mb-4 text-yellow-400">Warning: Deleting progress is irreversible!</p>
+            <button id="deleteAllProgressBtn" class="menu-button bg-red-600 hover:bg-red-700">Delete All Progress</button>
+            <button id="backToLevelSelectFromAdvancedBtn" class="menu-button mt-4">Back to Level Select</button>
+        </div>
+
+        <!-- Confirmation Modal -->
+        <div id="confirmationModal" class="overlay-screen menu-container hidden p-6 max-w-sm mx-auto my-auto rounded-lg">
+            <h2 class="text-2xl font-bold mb-3">Confirm Deletion</h2>
+            <p class="mb-2">Are you sure you want to delete ALL game progress?</p>
+            <p class="mb-4 font-semibold text-red-300">This action cannot be undone!</p>
+            <div class="flex justify-around w-full">
+                <button id="confirmDeleteBtn" class="menu-button bg-red-600 hover:bg-red-700">Yes, Delete</button>
+                <button id="cancelDeleteBtn" class="menu-button">No, Cancel</button>
+            </div>
+        </div>
+
+        <div id="settingsMenu" class="menu-container absolute inset-0 flex flex-col justify-center items-center hidden">
+            <h2 class="text-3xl font-bold mb-6 text-blue-400">SETTINGS</h2>
+            
+            <div class="space-y-4 mb-8 w-64">
+                <div class="flex items-center justify-between">
+                    <span>SOUND FX</span>
+                    <button id="sfxToggle" onclick="toggleSFX()" class="bg-blue-600 px-4 py-1 rounded-md font-bold w-20">ON</button>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span>MUSIC</span>
+                    <button id="musicToggle" onclick="toggleMusic()" class="bg-blue-600 px-4 py-1 rounded-md font-bold w-20">ON</button>
+                </div>
+            </div>
+            
+            <button id="closeSettingsBtn" class="menu-button">BACK TO MENU</button>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="gameScreen" class="relative w-full h-full hidden">
+            <canvas id="gameCanvas"></canvas>
+            
+            <div id="touchControlsOverlay">
+                <div id="touchLeft" class="touch-control-area"></div>
+                <div id="touchRight" class="touch-control-area"></div>
+                <div id="touchFire" class="touch-control-area"></div>
+            </div>
+
+            <div class="game-info-bar top">
+                <div id="scoreDisplay">SCORE: 0</div>
+                <div id="waveDisplay">WAVE: 1</div>
+                <div class="flex space-x-2">
+                    <button id="pauseButton" class="icon-button">
+                        <svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg> <!-- Pause Icon -->
+                    </button>
+                    <button id="mainMenuButton" class="icon-button">
+                         <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"></path></svg> <!-- Home Icon -->
+                    </button>
+                </div>
+            </div>
+            <div class="game-info-bar bottom">
+                <div id="livesDisplay">LIVES: ❤️❤️❤️</div>
+                <div id="highScoreDisplay">HIGH SCORE: 0</div>
+            </div>
+
+            <!-- In-Game Announcements -->
+            <div id="waveCompleteScreen" class="overlay-screen hidden">
+                <h2 id="waveCompleteText">WAVE COMPLETE!</h2>
+                <p>Prepare for the next wave...</p>
+            </div>
+            <div id="bossBattleScreen" class="overlay-screen hidden">
+                <h2>!!BOSS BATTLE!!</h2>
+            </div>
+             <div id="bossDefeatedScreen" class="overlay-screen hidden">
+                <h2>CONGRATULATIONS!</h2>
+                <p>Boss Eliminated!</p>
+            </div>
+ <div id="levelCompleteScreen" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-gray-900 bg-opacity-95 text-white p-4 z-50">
+            <h2 id="levelCompleteTitle" class="text-5xl font-bold text-yellow-400 mb-6 animate-pulse">LEVEL COMPLETE!</h2>
+            <p id="levelCompleteMessage" class="text-2xl mb-8">You cleared this level!</p>
+            <button id="levelCompleteToSelectorButton" class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold rounded-lg shadow-lg transform hover:scale-105 transition-transform duration-200">Continue to Level Select</button>
+  
+            </div>
+            <div id="gameOverScreen" class="overlay-screen hidden">
+                <h2>GAME OVER!</h2>
+                <p id="finalScoreText">Your Score: 0</p>
+                <button id="restartGameBtn" class="menu-button mt-6">RESTART</button>
+            </div>
+            <div id="gameWonScreen" class="overlay-screen hidden">
+                <h2>YOU WON THE GAME!</h2>
+                <p>Congratulations, Space Hero!</p>
+                <button id="playAgainBtn" class="menu-button mt-6">PLAY AGAIN</button>
+            </div>
+        </div>
+        <div id="devMenu" class="absolute top-20 left-1/2 -translate-x-1/2 bg-red-900/90 p-4 rounded-lg border-2 border-red-500 z-50 hidden text-white font-mono text-sm">
+            <h3 class="font-bold border-b border-red-500 mb-2">DEV CONSOLE</h3>
+            <div class="space-y-2">
+                <button onclick="skipWave()" class="bg-red-700 hover:bg-red-600 px-2 py-1 rounded w-full">Next Wave (W+1)</button>
+                <button onclick="toggleGodMode()" id="godModeBtn" class="bg-red-700 hover:bg-red-600 px-2 py-1 rounded w-full">God Mode: OFF</button>
+                <button onclick="spawnBossNow()" class="bg-red-700 hover:bg-red-600 px-2 py-1 rounded w-full">Spawn Boss</button>
+            </div>
+            <p class="text-[10px] mt-2 text-red-200 text-center">Press 'F2' to Close</p>
+        </div>
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        // --- 1. STARS DATA ---
+const stars = [];
+function initStars() {
+    stars.length = 0;
+    for (let i = 0; i < 100; i++) {
+        stars.push({
+            x: Math.random() * gameCanvas.width,
+            y: Math.random() * gameCanvas.height,
+            speed: Math.random() * 1.5 + 0.2
+        });
+    }
+}
+//  Menu Navigation
+document.getElementById('openSettingsBtn').onclick = () => {
+    document.getElementById('startMenu').classList.add('hidden');
+    document.getElementById('settingsMenu').classList.remove('hidden');
+};
+
+document.getElementById('closeSettingsBtn').onclick = () => {
+    document.getElementById('settingsMenu').classList.add('hidden');
+    document.getElementById('startMenu').classList.remove('hidden');
+};
+        const startMenu = document.getElementById('startMenu');
+        const howToPlayMenu = document.getElementById('howToPlayMenu');
+        const levelSelectMenu = document.getElementById('levelSelectMenu');
+        const advancedOptionsMenu = document.getElementById('advancedOptionsMenu');
+        const confirmationModal = document.getElementById('confirmationModal');
+        const gameScreen = document.getElementById('gameScreen');
+        const gameCanvas = document.getElementById('gameCanvas');
+        const ctx = gameCanvas.getContext('2d');
+        
+
+
+        const playerShipSprite = new Image();
+        // Corrected path for uploaded files in Canvas environment
+        playerShipSprite.src = 'assets/ship1.png'; 
+
+        // Ensure the image is loaded before attempting to draw it
+        playerShipSprite.onload = () => {
+            console.log("Player ship sprite loaded!");
+            // You can now safely draw playerShipSprite
+            // If your game starts after all assets are loaded, this is where you'd trigger it.
+        };
+        playerShipSprite.onerror = () => {
+            console.error("Failed to load player ship sprite!");
+        };
+        const AlienShipSprite = new Image();
+        // Corrected path for uploaded files in Canvas environment
+        AlienShipSprite.src = 'assets/ship2.png'; 
+
+        // Ensure the image is loaded before attempting to draw it
+        AlienShipSprite.onload = () => {
+            console.log("Alien ship sprite loaded!");
+            // You can now safely draw alienShipSprite
+            // If your game starts after all assets are loaded, this is where you'd trigger it.
+        };
+        AlienShipSprite.onerror = () => {
+            console.error("Failed to load alien ship sprite!");
+        };
+const BossShipSprite = new Image();
+        // Corrected path for uploaded files in Canvas environment
+        BossShipSprite.src = 'assets/ship3.png'; 
+
+        // Ensure the image is loaded before attempting to draw it
+        BossShipSprite.onload = () => {
+            console.log("Boss ship sprite loaded!");
+            // You can now safely draw alienShipSprite
+            // If your game starts after all assets are loaded, this is where you'd trigger it.
+        };
+        BossShipSprite.onerror = () => {
+            console.error("Failed to load Boss ship sprite!");
+        };
+ const shootSound = new Audio('assets/shoot.wav');
+
+        shootSound.volume = 0.5; // Adjust volume (0.0 to 1.0, 0.5 is half volume)
+
+const boomSound = new Audio('assets/boom1.wav');
+
+        boomSound.volume = 0.7; // Adjust volume (0.0 to 1.0, 0.5 is half volume)
+
+const bossExplosionSound = new Audio('assets/boom2.wav'); // Or whatever you name it
+bossExplosionSound.volume = 0.8; // Make it a bit louder than alien explosion
+bossExplosionSound.load();
+        const endlessModeBtn = document.getElementById('endlessModeBtn');
+        const levelsModeBtn = document.getElementById('levelsModeBtn');
+        const howToPlayBtn = document.getElementById('howToPlayBtn');
+        
+        const backToMainFromHowToPlayBtn = document.getElementById('backToMainFromHowToPlayBtn');
+        const levelGrid = document.getElementById('levelGrid');
+        const backToMainFromLevelSelectBtn = document.getElementById('backToMainFromLevelSelectBtn');
+        const advancedOptionsBtn = document.getElementById('advancedOptionsBtn');
+        const deleteAllProgressBtn = document.getElementById('deleteAllProgressBtn');
+        const backToLevelSelectFromAdvancedBtn = document.getElementById('backToLevelSelectFromAdvancedBtn');
+        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+        const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+       
+
+        
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const waveDisplay = document.getElementById('waveDisplay');
+        const livesDisplay = document.getElementById('livesDisplay');
+        const highScoreDisplay = document.getElementById('highScoreDisplay');
+        const pauseButton = document.getElementById('pauseButton');
+        const mainMenuButton = document.getElementById('mainMenuButton');
+
+        const waveCompleteScreen = document.getElementById('waveCompleteScreen');
+        const waveCompleteText = document.getElementById('waveCompleteText');
+        const bossBattleScreen = document.getElementById('bossBattleScreen');
+        const bossDefeatedScreen = document.getElementById('bossDefeatedScreen');
+        const levelCompleteScreen = document.getElementById('levelCompleteScreen');
+        const levelCompleteText = document.getElementById('levelCompleteText');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const finalScoreText = document.getElementById('finalScoreText');
+        const gameWonScreen = document.getElementById('gameWonScreen');
+        const restartGameBtn = document.getElementById('restartGameBtn');
+        const playAgainBtn = document.getElementById('playAgainBtn');
+
+        const touchLeft = document.getElementById('touchLeft');
+        const touchRight = document.getElementById('touchRight');
+        const touchFire = document.getElementById('touchFire');
+
+        // --- Game Constants ---
+        const PLAYER_SPEED = 6;
+        const PLAYER_FIRE_RATE = 150; // ms
+        const PLAYER_BULLET_SPEED = 9;
+        const INITIAL_PLAYER_LIVES = 50;
+        const PLAYER_INVULNERABILITY_DURATION = 1750; // ms
+        const PLAYER_WIDTH = 110;
+        const PLAYER_HEIGHT = 110;
+
+        const ALIEN_BULLET_SPEED = 2;
+        const ALIEN_FIRE_RATE = 4500; // ms base, + random
+        const ALIEN_HIT_POINTS_BASE = 4;
+        const ALIEN_WIDTH = 75;
+        const ALIEN_HEIGHT = 65;
+        const ALIENS_PER_WAVE_BASE = 2;
+
+        const BOSS_FIRE_RATE = 3000; // ms base, + random
+        const BOSS_WIDTH = 180;
+        const BOSS_HEIGHT = 150;
+        
+        const WAVE_COMPLETE_DELAY = 1520; // ms
+        const BOSS_INTRO_DELAY = 2000; // ms
+        const TOTAL_LEVELS = 100;
+
+        // --- Game State Variables ---
+        let player;
+        let bullets = [];
+        let aliens = [];
+        let boss = null;
+        
+        let score = 0;
+        let highScore = 0; // Session-based
+        let lives = INITIAL_PLAYER_LIVES;
+        let wave = 1; // Cumulative wave in endless, relative wave (1-5) in levels
+        let currentLevel = 1; // For Levels Mode
+        
+        let gameMode = 'endless'; // 'endless' or 'levels'
+        let isPaused = false;
+        let gameRunning = false;
+        let animationFrameId;
+
+        let keys = {
+            ArrowLeft: false, ArrowRight: false, ArrowUp: false, ArrowDown: false,
+            KeyA: false, KeyD: false, KeyW: false, KeyS: false,
+            Space: false
+        };
+        let touchState = { left: false, right: false, fire: false };
+
+        let unlockedLevels = [1]; // Level 1 is unlocked by default
+
+        const pauseIconSVG = `<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>`;
+        const playIconSVG = `<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>`;
+
+        // --- Utility Functions ---
+        function random(min, max) {
+            return Math.random() * (max - min) + min;
+        }
+
+        function clamp(value, min, max) {
+            return Math.max(min, Math.min(value, max));
+        }
+
+        function checkCollision(rect1, rect2) {
+            return rect1.x < rect2.x + rect2.width &&
+                   rect1.x + rect1.width > rect2.x &&
+                   rect1.y < rect2.y + rect2.height &&
+                   rect1.y + rect1.height > rect2.y;
+        }
+        
+        function showScreen(screenElement) {
+            [startMenu, howToPlayMenu, levelSelectMenu, advancedOptionsMenu, gameScreen, confirmationModal, // Added creditsMenu here
+             waveCompleteScreen, bossBattleScreen, bossDefeatedScreen, levelCompleteScreen, gameOverScreen, gameWonScreen]
+            .forEach(s => s.classList.add('hidden'));
+            if (screenElement) screenElement.classList.remove('hidden');
+        }
+
+        // --- Player Class ---
+        class Player {
+            constructor() {
+                this.width = PLAYER_WIDTH;
+                this.height = PLAYER_HEIGHT;
+                this.x = gameCanvas.width / 2 - this.width / 2;
+                this.y = gameCanvas.height - this.height - 20;
+                this.speed = PLAYER_SPEED;
+                this.fireCooldown = 0;
+                this.invulnerableTimer = 0;
+                this.lives = INITIAL_PLAYER_LIVES;
+            }
+
+            draw() {
+                if (this.invulnerableTimer > 0 && Math.floor(this.invulnerableTimer / 100) % 2 === 0) {
+                    // Flashing effect
+                } else {
+ 
+    // Check if the sprite image is fully loaded before drawing
+    if (!playerShipSprite.complete) {
+        // You can optionally draw a placeholder here (e.g., a simple rect)
+        // or just return if it's not critical to draw before load.
+        return;
+    }
+
+    // Use the 5-argument version of drawImage for a single image
+    ctx.drawImage(
+        playerShipSprite,
+        this.x,          // Destination X on canvas
+        this.y,          // Destination Y on canvas
+        this.width,      // Destination Width on canvas (how wide you want it in game)
+        this.height      // Destination Height on canvas (how tall you want it in game)
+    );
+}
+            }
+
+            update(deltaTime) {
+                if (this.fireCooldown > 0) this.fireCooldown -= deltaTime;
+                if (this.invulnerableTimer > 0) this.invulnerableTimer -= deltaTime;
+
+                let moveX = 0;
+                if (keys.ArrowLeft || keys.KeyA || touchState.left) moveX -= 1;
+                if (keys.ArrowRight || keys.KeyD || touchState.right) moveX += 1;
+                
+                // For simplicity, touch controls override keyboard for up/down if WASD is used for that
+                // Currently, player only moves left/right
+                this.x += moveX * this.speed;
+                this.x = clamp(this.x, 0, gameCanvas.width - this.width);
+
+                if ((keys.Space || touchState.fire) && this.fireCooldown <= 0) {
+                    this.shoot();
+                    this.fireCooldown = PLAYER_FIRE_RATE;
+                }
+            }
+
+            shoot() {
+                bullets.push(new Bullet(this.x + this.width / 2 - 2.5, this.y, 5, 10, '#28a745', PLAYER_BULLET_SPEED, 'up', 'player'));
+ shootSound.currentTime = 0;
+
+shootSound.play();
+            }
+
+            takeHit() {
+                if (this.invulnerableTimer <= 0) {
+                    this.lives--;
+                    updateLivesDisplay();
+                    this.invulnerableTimer = PLAYER_INVULNERABILITY_DURATION;
+                    if (this.lives <= 0) {
+                        gameOver();
+                    }
+                }
+            }
+        }
+
+        // --- Bullet Class ---
+        class Bullet {
+            constructor(x, y, width, height, color, speed, type = 'down', owner = 'alien', customProps = {}) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+                this.color = color;
+                this.speed = speed;
+                this.type = type; // 'up', 'down', 'directional', 'sweeping', 'wave', 'zigzag', etc.
+                this.owner = owner; // 'player', 'alien', 'boss'
+                this.dx = customProps.dx || 0;
+                this.dy = customProps.dy || (type === 'up' ? -1 : 1);
+                this.initialY = y; // for wave/zigzag patterns
+                this.initialX = x; // for wave/zigzag patterns
+                this.waveAmplitude = customProps.waveAmplitude || 20;
+                this.waveFrequency = customProps.waveFrequency || 0.1;
+                this.zigzagMagnitude = customProps.zigzagMagnitude || 10;
+                this.zigzagFrequency = customProps.zigzagFrequency || 0.2;
+                this.homingTarget = customProps.homingTarget || null;
+                this.homingStrength = customProps.homingStrength || 0.02;
+                this.acceleration = customProps.acceleration || 0;
+                this.lifespan = customProps.lifespan || Infinity; // in ms
+                this.age = 0;
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+            }
+
+            update(deltaTime) {
+                this.age += deltaTime;
+                let currentSpeed = this.speed + this.acceleration * (this.age / 1000);
+
+                if (this.type === 'directional' || this.type === 'sweeping' || this.type === 'spiral') {
+                    this.x += this.dx * currentSpeed;
+                    this.y += this.dy * currentSpeed;
+                } else if (this.type === 'wave') {
+                    this.y += this.dy * currentSpeed;
+                    this.x = this.initialX + Math.sin((this.y - this.initialY) * this.waveFrequency) * this.waveAmplitude;
+                } else if (this.type === 'zigzag') {
+                    this.y += this.dy * currentSpeed;
+                    this.x += this.dx * currentSpeed; // Base horizontal movement
+                    // Add zigzag motion perpendicular to dy or based on a fixed axis
+                    if (this.dy !== 0) { // Primarily vertical zigzag
+                        this.x += Math.sin((this.y - this.initialY) * this.zigzagFrequency) * this.zigzagMagnitude * (deltaTime/16); // Normalize by frame time
+                    } else { // Primarily horizontal zigzag
+                         this.y += Math.sin((this.x - this.initialX) * this.zigzagFrequency) * this.zigzagMagnitude * (deltaTime/16);
+                    }
+
+                } else if (this.type === 'homing' && this.homingTarget) {
+                    const targetX = this.homingTarget.x + this.homingTarget.width / 2;
+                    const targetY = this.homingTarget.y + this.homingTarget.height / 2;
+                    const angle = Math.atan2(targetY - (this.y + this.height/2), targetX - (this.x + this.width/2));
+                    
+                    // Smoothly adjust dx and dy towards the target
+                    const targetDx = Math.cos(angle);
+                    const targetDy = Math.sin(angle);
+                    this.dx += (targetDx - this.dx) * this.homingStrength;
+                    this.dy += (targetDy - this.dy) * this.homingStrength;
+
+                    // Normalize dx and dy
+                    const magnitude = Math.sqrt(this.dx * this.dx + this.dy * this.dy);
+                    if (magnitude > 0) {
+                        this.dx /= magnitude;
+                        this.dy /= magnitude;
+                    }
+
+                    this.x += this.dx * currentSpeed;
+                    this.y += this.dy * currentSpeed;
+                }
+                else { // 'up' or 'down'
+                    this.y += this.dy * currentSpeed;
+                }
+            }
+        }
+
+        // --- Alien Class ---
+        class Alien {
+            constructor(x, y, type = 1) {
+                this.x = x;
+                this.y = y;
+                this.width = ALIEN_WIDTH;
+                this.height = ALIEN_HEIGHT;
+                this.type = type; // For different appearances if needed
+                this.speed = 0.9 + (getCurrentCumulativeWave() * 0.15);
+                this.maxHp = ALIEN_HIT_POINTS_BASE + Math.floor(getCurrentCumulativeWave() / 2);
+                this.hp = this.maxHp;
+                this.fireCooldown = random(ALIEN_FIRE_RATE / 2, ALIEN_FIRE_RATE * 0.5);
+                this.moveDirection = Math.random() < 0.5 ? 1 : -1;
+                this.moveDistance = random(50, 100);
+                this.movedSoFar = 0;
+            }
+
+            draw() {
+                // Check if the sprite image is fully loaded before drawing
+                if (!AlienShipSprite.complete) {
+                    // You can optionally draw a placeholder here (e.g., a simple rect)
+                    // or just return if it's not critical to draw before load.
+                    return;
+                }
+
+                // Use the 5-argument version of drawImage for a single image
+                ctx.drawImage(
+                    AlienShipSprite,
+                    this.x,          // Destination X on canvas
+                    this.y,          // Destination Y on canvas
+                    this.width,      // Destination Width on canvas (how wide you want it in game)
+                    this.height      // Destination Height on canvas (how tall you want it in game)
+                );
+                // Health bar
+                if (this.hp < this.maxHp) {
+                    const barWidth = this.width;
+                    const barHeight = 5;
+                    const barY = this.y - barHeight - 2;
+                    ctx.fillStyle = '#EF4444'; // Red for background
+                    ctx.fillRect(this.x, barY, barWidth, barHeight);
+                    ctx.fillStyle = '#10B981'; // Green for current health
+                    ctx.fillRect(this.x, barY, barWidth * (this.hp / this.maxHp), barHeight);
+                }
+            }
+
+            update(deltaTime) {
+                this.x += this.speed * this.moveDirection;
+                this.movedSoFar += this.speed;
+
+                if (this.movedSoFar >= this.moveDistance) {
+                    this.moveDirection *= -1;
+                    this.moveDistance = random(50, 100);
+                    this.movedSoFar = 0;
+                }
+
+                this.x = clamp(this.x, 0, gameCanvas.width - this.width);
+                
+                // Clamp Y to prevent aliens from going too low
+                this.y = clamp(this.y, 0, gameCanvas.height * 0.6);
+
+
+                if (this.fireCooldown > 0) this.fireCooldown -= deltaTime;
+                if (this.fireCooldown <= 0) {
+                    this.shoot();
+                    this.fireCooldown = random(ALIEN_FIRE_RATE / 2, ALIEN_FIRE_RATE * 0.5) / Math.max(1, getCurrentCumulativeWave()/5) ; // Fire faster on later waves
+                }
+            }
+
+            shoot() {
+                bullets.push(new Bullet(this.x + this.width / 2 - 2.5, this.y + this.height, 5, 10, '#DC3545', ALIEN_BULLET_SPEED, 'down', 'alien'));
+            }
+            
+            takeHit(amount)
+ {
+
+                this.hp -= amount;
+
+                if (this.hp <= 0) {
+                    // Corrected order: play sound BEFORE returning
+                    console.log("Alien destroyed! Attempting to play boom sound.");
+                    boomSound.currentTime = 0;
+                    boomSound.play();
+                    return true; // Alien destroyed - Moved this line AFTER the sound
+                }
+                return false; // Alien still alive
+            }
+        } 
+        // --- Boss Class Configurations ---
+        const bossConfigs = [ // 20 boss configurations
+            // Base HP examples: 120, 150, 180, 200, 220, 250, 280, 300, 320, 350 (cycling)
+            { baseHealth: 120, appearance: { color: '#FF6347', shape: 'rect', details: [{ type: 'eye', count: 2 }] }, patterns: ['straightTriple', 'wideSpread'] },
+            { baseHealth: 150, appearance: { color: '#4682B4', shape: 'ellipse', details: [{ type: 'cannon', count: 2 }] }, patterns: ['aimedSingle', 'burstFire'] },
+            { baseHealth: 180, appearance: { color: '#32CD32', shape: 'triangle', details: [{ type: 'fin', count: 3 }] }, patterns: ['oscillatingSpread', 'dualStream'] },
+            { baseHealth: 200, appearance: { color: '#FFD700', shape: 'rect', details: [{ type: 'antenna', count: 1 }] }, patterns: ['crossPattern', 'homingMissile'] }, // Homing
+            { baseHealth: 220, appearance: { color: '#DA70D6', shape: 'ellipse', details: [{ type: 'spike', count: 5 }] }, patterns: ['radialBurst', 'wavePattern'] }, // Wave
+            { baseHealth: 250, appearance: { color: '#8A2BE2', shape: 'triangle', details: [{ type: 'wing', count: 2 }] }, patterns: ['diagonalPair', 'randomScatter'] },
+            { baseHealth: 280, appearance: { color: '#00FFFF', shape: 'rect', details: [{ type: 'port', count: 4 }] }, patterns: ['fastStraight', 'slowTripleAimed'] },
+            { baseHealth: 300, appearance: { color: '#FF4500', shape: 'ellipse', details: [{ type: 'shieldEmitter', count: 2 }] }, patterns: ['expandingRing', 'concentricCircles'] },
+            { baseHealth: 320, appearance: { color: '#7FFF00', shape: 'triangle', details: [{ type: 'laserFocus', count: 1 }] }, patterns: ['zigzag', 'sideLasers'] }, // Zigzag, Side Lasers
+            { baseHealth: 350, appearance: { color: '#DC143C', shape: 'rect', details: [{ type: 'thrusterBig', count: 1 }] }, patterns: ['retreatingBarrage', 'shieldedCore'] },
+            // Repeat with variations or new patterns for remaining 10
+            { baseHealth: 125, appearance: { color: '#FF7F50', shape: 'ellipse', details: [{ type: 'eye', count: 3 }] }, patterns: ['spiral', 'barrage'] }, // Spiral
+            { baseHealth: 155, appearance: { color: '#6495ED', shape: 'rect', details: [{ type: 'cannon', count: 3 }] }, patterns: ['sweepingLaser', 'chasingVolley'] }, // Sweeping Laser
+            { baseHealth: 185, appearance: { color: '#ADFF2F', shape: 'triangle', details: [{ type: 'fin', count: 4 }] }, patterns: ['randomSpray', 'directionalBurst'] },
+            { baseHealth: 205, appearance: { color: '#FFFF00', shape: 'ellipse', details: [{ type: 'antenna', count: 2 }] }, patterns: ['scatterShot', 'pulsingRing'] },
+            { baseHealth: 225, appearance: { color: '#DB7093', shape: 'rect', details: [{ type: 'spike', count: 6 }] }, patterns: ['crossfire', 'fastTripleAimed'] },
+            { baseHealth: 255, appearance: { color: '#9370DB', shape: 'triangle', details: [{ type: 'wing', count: 3 }] }, patterns: ['slowExpandingBurst', 'homingCluster'] }, // Homing
+            { baseHealth: 285, appearance: { color: '#00CED1', shape: 'ellipse', details: [{ type: 'port', count: 5 }] }, patterns: ['aimedSingle', 'radialBurst'] },
+            { baseHealth: 305, appearance: { color: '#FF69B4', shape: 'rect', details: [{ type: 'shieldEmitter', count: 3 }] }, patterns: ['wavePattern', 'wideSpread'] }, // Wave
+            { baseHealth: 325, appearance: { color: '#BDB76B', shape: 'triangle', details: [{ type: 'laserFocus', count: 2 }] }, patterns: ['zigzag', 'straightTriple'] },
+            // THIS IS THE FINAL BOSS CONFIGURATION (INDEX 19) - GREATLY ENHANCED
+            { 
+                baseHealth: 400, // Significantly increased health for the final boss
+                appearance: { color: '#FF0000', shape: 'rect', details: [{ type: 'core', count: 1 }, { type: 'thrusterBig', count: 6 }, { type: 'spike', count: 8 }] }, // Red color, rect shape, more details
+                // All powerful patterns combined for the ultimate challenge
+                patterns: ['radialBurst', 'expandingRing', 'homingMissile', 'barrage', 'concentricCircles', 'sweepingLaser', 'scatterShot', 'spiral', 'retreatingBarrage', 'crossPattern', 'zigzag', 'sideLasers'] 
+            },
+        ];
+
+
+        class Boss {
+            constructor(level) {
+                const configIndex = (level - 1) % bossConfigs.length;
+                this.config = bossConfigs[configIndex];
+                
+                this.width = BOSS_WIDTH;
+                this.height = BOSS_HEIGHT;
+                this.x = gameCanvas.width / 2 - this.width / 2;
+                this.y = 50;
+                
+                let healthMultiplier = 1;
+                let speedMultiplier = 1;
+                let bulletSpeedMultiplier = 1;
+                let fireRateMultiplier = 1;
+
+                if (gameMode === 'endless' && getCurrentCumulativeWave() > TOTAL_LEVELS) { // Equivalent to after level 20
+                    const postLevel20Waves = getCurrentCumulativeWave() - TOTAL_LEVELS;
+                    healthMultiplier += (postLevel20Waves * 0.1); // 10% more health per wave past 20
+                    speedMultiplier += (postLevel20Waves * 0.05);
+                    bulletSpeedMultiplier += (postLevel20Waves * 0.05);
+                    fireRateMultiplier = Math.max(0.5, 1 - (postLevel20Waves * 0.05)); // Fire rate gets faster (delay smaller)
+                }
+
+                this.maxHp = Math.floor(this.config.baseHealth * healthMultiplier);
+                this.hp = this.maxHp;
+                this.speed = (1.5 + getCurrentCumulativeWave() * 0.05) * speedMultiplier;
+                this.bulletSpeedMultiplier = bulletSpeedMultiplier;
+                this.baseFireRate = BOSS_FIRE_RATE * fireRateMultiplier;
+
+                this.fireCooldown = random(this.baseFireRate * 0.8, this.baseFireRate * 1.2);
+                this.moveDirection = Math.random() < 0.5 ? 1 : -1;
+                this.moveDistance = random(100, 200);
+                this.movedSoFar = 0;
+                this.attackPatterns = this.config.patterns;
+                this.currentPatternIndex = 0;
+                this.patternCooldown = 5000; // Time between switching patterns
+                this.patternTimer = this.patternCooldown;
+                this.isRetreating = false;
+                this.retreatTimer = 0;
+            }
+
+            draw() {
+
+                // Main shape
+                 // Check if the sprite image is fully loaded before drawing
+    if (!BossShipSprite.complete) {
+        // You can optionally draw a placeholder here (e.g., a simple rect)
+        // or just return if it's not critical to draw before load.
+        return;
+    }
+
+    // Use the 5-argument version of drawImage for a single image
+    ctx.drawImage(
+        BossShipSprite,
+        this.x,          // Destination X on canvas
+        this.y,          // Destination Y on canvas
+        this.width,      // Destination Width on canvas (how wide you want it in game)
+        this.height      // Destination Height on canvas (how tall you want it in game)
+    );
+
+
+                // Health bar below boss
+                const barWidth = this.width * 1.2;
+                const barHeight = 10;
+                const barX = this.x + (this.width - barWidth) / 2;
+                const barY = this.y + this.height + 10;
+                ctx.fillStyle = '#EF4444'; // Red
+                ctx.fillRect(barX, barY, barWidth, barHeight);
+                ctx.fillStyle = '#10B981'; // Green
+                ctx.fillRect(barX, barY, barWidth * (this.hp / this.maxHp), barHeight);
+            }
+
+            update(deltaTime) {
+                if (this.isRetreating) {
+                    this.y -= this.speed * 0.5; // Move up slowly
+                    this.retreatTimer -= deltaTime;
+                    if (this.retreatTimer <= 0) {
+                        this.isRetreating = false;
+                        this.y = clamp(this.y, 20, 100); // Return to normal y range
+                    }
+                } else {
+                    this.x += this.speed * this.moveDirection;
+                    this.movedSoFar += this.speed;
+
+                    if (this.movedSoFar >= this.moveDistance) {
+                        this.moveDirection *= -1;
+                        this.moveDistance = random(100, 200);
+                        this.movedSoFar = 0;
+                    }
+                    this.x = clamp(this.x, 0, gameCanvas.width - this.width);
+                }
+
+
+                if (this.fireCooldown > 0) this.fireCooldown -= deltaTime;
+                this.patternTimer -= deltaTime;
+
+                if (this.patternTimer <= 0) {
+                    this.currentPatternIndex = (this.currentPatternIndex + 1) % this.attackPatterns.length;
+                    this.patternTimer = this.patternCooldown + random(-1000,1000); // Reset pattern timer with some variance
+                }
+                
+                if (this.fireCooldown <= 0 && player) {
+                    this.executeAttackPattern(this.attackPatterns[this.currentPatternIndex]);
+                    this.fireCooldown = random(this.baseFireRate * 0.8, this.baseFireRate * 1.2);
+                }
+            }
+
+            executeAttackPattern(patternName) {
+                const bx = this.x + this.width / 2;
+                const by = this.y + this.height;
+                const bSpeed = ALIEN_BULLET_SPEED * 1.5 * this.bulletSpeedMultiplier; // Boss bullets are faster
+                const bSizeW = 8;
+                const bSizeH = 16;
+
+                const aimedDir = player ? Math.atan2(player.y - by, player.x + player.width/2 - bx) : Math.PI/2;
+
+                switch (patternName) {
+                    case 'straightTriple':
+                        bullets.push(new Bullet(bx - 20 - bSizeW/2, by, bSizeW, bSizeH, '#FF8C00', bSpeed, 'down', 'boss'));
+                        bullets.push(new Bullet(bx - bSizeW/2, by, bSizeW, bSizeH, '#FF8C00', bSpeed, 'down', 'boss'));
+                        bullets.push(new Bullet(bx + 20 - bSizeW/2, by, bSizeW, bSizeH, '#FF8C00', bSpeed, 'down', 'boss'));
+                        break;
+                    case 'wideSpread':
+                        for (let i = -2; i <= 2; i++) {
+                            const angle = Math.PI / 2 + (i * Math.PI / 8); // Spread over 90 degrees
+                            bullets.push(new Bullet(bx - bSizeW/2, by, bSizeW, bSizeH, '#FF69B4', bSpeed, 'directional', 'boss', { dx: Math.cos(angle), dy: Math.sin(angle) }));
+                        }
+                        break;
+                    case 'aimedSingle':
+                        bullets.push(new Bullet(bx - bSizeW/2, by, bSizeW, bSizeH, '#FFFF00', bSpeed * 1.2, 'directional', 'boss', { dx: Math.cos(aimedDir), dy: Math.sin(aimedDir) }));
+                        break;
+                    case 'burstFire':
+                        for (let i = 0; i < 3; i++) {
+                            setTimeout(() => {
+                                if (!gameRunning || isPaused || !this) return; // Check if boss still exists
+                                bullets.push(new Bullet(bx - bSizeW/2, by, bSizeW, bSizeH, '#ADFF2F', bSpeed, 'directional', 'boss', { dx: Math.cos(aimedDir), dy: Math.sin(aimedDir) }));
+                            }, i * 100);
+                        }
+                        break;
+                    case 'oscillatingSpread':
+                         for (let i = -1; i <= 1; i++) {
+                            const angle = Math.PI / 2 + (i * Math.PI / 12) + Math.sin(Date.now()/500) * Math.PI/16;
+                            bullets.push(new Bullet(bx - bSizeW/2, by, bSizeW, bSizeH, '#00CED1', bSpeed, 'directional', 'boss', { dx: Math.cos(angle), dy: Math.sin(angle) }));
+                        }
+                        break;
+                    case 'dualStream':
+                        bullets.push(new Bullet(bx - 25 - bSizeW/2, by, bSizeW, bSizeH, '#BA55D3', bSpeed, 'down', 'boss'));
+                        bullets.push(new Bullet(bx + 25 - bSizeW/2, by, bSizeW, bSizeH, '#BA55D3', bSpeed, 'down', 'boss'));
+                        break;
+                    case 'crossPattern': // Up, Down, Left, Right relative to boss
+                        bullets.push(new Bullet(bx - bSizeW/2, by, bSizeW, bSizeH, '#FF1493', bSpeed, 'directional', 'boss', { dx: 0, dy: 1 })); // Down
+                        bullets.push(new Bullet(bx - bSizeW/2, this.y - bSizeH, bSizeW, bSizeH, '#FF1493', bSpeed, 'directional', 'boss', { dx: 0, dy: -1 })); // Up
+                        bullets.push(new Bullet(this.x - bSizeW, this.y + this.height/2 - bSizeH/2, bSizeW, bSizeH, '#FF1493', bSpeed, 'directional', 'boss', { dx: -1, dy: 0 })); // Left
+                        bullets.push(new Bullet(this.x + this.width, this.y + this.height/2 - bSizeH/2, bSizeW, bSizeH, '#FF1493', bSpeed, 'directional', 'boss', { dx: 1, dy: 0 })); // Right
+                        break;
+                    case 'homingMissile':
+                        bullets.push(new Bullet(bx - 10, by, 20, 20, '#FFFF00', bSpeed * 0.5, 'homing', 'boss', { homingTarget: player, homingStrength: 0.03, lifespan: 7000 }));
+                        break;
+                    case 'radialBurst':
+                        for (let i = 0; i < 12; i++) {
+                            const angle = (i / 12) * 2 * Math.PI;
+                            bullets.push(new Bullet(bx - bSizeW/2, by - bSizeH/2, bSizeW, bSizeH, '#40E0D0', bSpeed * 0.8, 'directional', 'boss', { dx: Math.cos(angle), dy: Math.sin(angle) }));
+                        }
+                        break;
+                    case 'wavePattern':
+                        bullets.push(new Bullet(bx - 5, by, 10, 10, '#00FFFF', bSpeed, 'wave', 'boss', { dy: 1, waveAmplitude: 30, waveFrequency: 0.05 }));
+                        break;
+                    case 'zigzag':
+                         bullets.push(new Bullet(bx - 5, by, 10, 10, '#9932CC', bSpeed, 'zigzag', 'boss', { dy: 1, dx: 0.2, zigzagMagnitude: 20, zigzagFrequency: 0.1}));
+                        break;
+                     case 'sweepingLaser': // A series of fast bullets to simulate a laser
+                        let laserOriginX = this.x - 50; // Start left of boss
+                        let laserY = this.y + this.height/2;
+                        for(let i=0; i<20; i++) { // 20 segments for the laser
+                            setTimeout(() => {
+                                if (!gameRunning || isPaused || !this) return;
+                                bullets.push(new Bullet(laserOriginX + i * ((this.width + 100)/20) - 5, laserY, 10, 30, '#00FF00', bSpeed * 3, 'directional', 'boss', {dx: 0, dy: 1, lifespan: 300}));
+                            }, i * 20); // Small delay for sweeping effect
+                        }
+                        break;
+                    // Add more patterns based on bossConfigs as simplified versions
+                    case 'sideLasers':
+                         bullets.push(new Bullet(this.x - 10, this.y + this.height/2 - 15, 10, 30, '#FF0000', bSpeed * 1.5, 'down', 'boss'));
+                         bullets.push(new Bullet(this.x + this.width, this.y + this.height/2 - 15, 10, 30, '#FF0000', bSpeed * 1.5, 'down', 'boss'));
+                        break;
+                    case 'retreatingBarrage':
+                        this.isRetreating = true;
+                        this.retreatTimer = 1500; // Retreat for 1.5 seconds
+                        for (let i = 0; i < 5; i++) { // Fire 5 bullets
+                           setTimeout(() => {
+                                if (!gameRunning || isPaused || !this) return;
+                                bullets.push(new Bullet(bx - bSizeW/2, by, bSizeW, bSizeH, '#FFA500', bSpeed, 'directional', 'boss', { dx: (Math.random()-0.5)*0.5, dy: 1 }));
+                            }, i * 150);
+                        }
+                        break;
+                    case 'shieldedCore': // Simulates firing from center
+                         bullets.push(new Bullet(bx - 15 - bSizeW/2, by, bSizeW, bSizeH, '#FFFFFF', bSpeed, 'directional', 'boss', {dx: -0.2, dy: 1}));
+                         bullets.push(new Bullet(bx - bSizeW/2, by, bSizeW, bSizeH, '#FFFFFF', bSpeed, 'directional', 'boss', {dx: 0, dy: 1}));
+                         bullets.push(new Bullet(bx + 15 - bSizeW/2, by, bSizeW, bSizeH, '#FFFFFF', bSpeed, 'directional', 'boss', {dx: 0.2, dy: 1}));
+                        break;
+                    case 'spiral':
+                        let spiralAngle = Date.now() / 200; // Angle changes over time
+                        for(let i=0; i<2; i++){ // Two arms for spiral
+                            const angle = spiralAngle + i * Math.PI;
+                            bullets.push(new Bullet(bx - bSizeW/2, by - bSizeH/2, bSizeW, bSizeH, '#FFC0CB', bSpeed * 0.7, 'directional', 'boss', { dx: Math.cos(angle), dy: Math.sin(angle) }));
+                        }
+                        break;
+
+                    default: // Fallback to simple shot
+                        bullets.push(new Bullet(bx - bSizeW/2, by, bSizeW, bSizeH, '#FF0000', bSpeed, 'down', 'boss'));
+                        break;
+                }
+            }
+
+            takeDamage(amount) {
+                this.hp -= amount;
+                if (this.hp <= 0) {
+bossExplosionSound.currentTime = 0; // Reset to start
+
+bossExplosionSound.play(); // Play the new boss explosion sound
+                    return true; // Boss destroyed
+                }
+                return false; // Boss still alive
+            }
+        }
+
+        // --- Game Logic ---
+        function initGame(mode, level = 1) {
+            gameMode = mode;
+            currentLevel = level;
+            isPaused = false;
+            pauseButton.innerHTML = pauseIconSVG;
+
+            // Resize canvas
+            const container = document.getElementById('gameContainer');
+            gameCanvas.width = container.clientWidth;
+            gameCanvas.height = container.clientHeight;
+
+            // Disable image smoothing for crisp pixel art
+            ctx.imageSmoothingEnabled = false;
+            ctx.mozImageSmoothingEnabled = false; 
+            ctx.webkitImageSmoothingEnabled = false;
+            ctx.msImageSmoothingEnabled = false;
+
+            player = new Player();
+            player.lives = INITIAL_PLAYER_LIVES; // Reset lives
+            bullets = [];
+            aliens = [];
+            boss = null;
+            
+            score = 0;
+            if (gameMode === 'levels') {
+                 wave = 1; // Start at wave 1 of the current level
+            } else { // Endless
+                wave = 1; // Cumulative wave
+            }
+            
+            updateScoreDisplay();
+            updateLivesDisplay();
+            updateWaveDisplay();
+            updateHighScoreDisplay(); // Update to show current session high score
+
+            if (gameMode === 'levels') {
+                spawnWave(); // Spawn first wave of the level
+            } else {
+                spawnAliens(); // Spawn based on cumulative wave
+            }
+        }
+
+        function startGame(mode, level = 1) {
+            initGame(mode, level);
+            gameRunning = true;
+            showScreen(gameScreen);
+            gameLoop(0); // Pass initial timestamp
+        }
+
+        function getCurrentCumulativeWave() {
+            if (gameMode === 'endless') {
+                return wave;
+            } else { // Levels mode
+                // Each level has 5 waves. So level 'L' starts at cumulative wave (L-1)*5 + 1
+                // The current relative wave 'w' in level 'L' is (L-1)*5 + w
+                return (currentLevel - 1) * 5 + wave;
+            }
+        }
+
+        function spawnAliens() {
+            const cumulativeWave = getCurrentCumulativeWave();
+            const numAliens = ALIENS_PER_WAVE_BASE + Math.floor(cumulativeWave / 2);
+            for (let i = 0; i < numAliens; i++) {
+                const x = random(0, gameCanvas.width - ALIEN_WIDTH);
+                const y = random(30, 150); // Spawn near top
+                aliens.push(new Alien(x, y));
+            }
+        }
+        
+        function spawnBoss() {
+            const cumulativeWave = getCurrentCumulativeWave();
+            boss = new Boss(cumulativeWave); // Pass cumulative wave for scaling/config
+        }
+
+       function spawnWave() {
+            // In levels mode, wave is 1-5. Wave 5 is boss.
+            // In endless mode, boss every 5th cumulative wave.
+            const cumulativeWave = getCurrentCumulativeWave();
+
+            if (gameMode === 'levels') {
+                if (wave === 5) { // It's a boss wave in Levels Mode
+                    if (currentLevel === TOTAL_LEVELS) { // Is it the LAST level (Level 20)?
+                        showOverlay(bossBattleScreen, BOSS_INTRO_DELAY, () => {
+                            aliens = []; // Clear any remaining regular aliens
+                            spawnBoss();
+                        });
+                    } else {
+                        // Not the final level's wave 5, so spawn a regular higher alien wave
+                        spawnAliens(); // This function already scales alien difficulty based on cumulativeWave/currentLevel
+                    }
+                } else {
+                    spawnAliens(); // Regular wave for waves 1-4 in Levels Mode
+                }
+            } else { // Endless Mode remains unchanged regarding boss spawns
+                if (cumulativeWave % 5 === 0) { // Still spawn bosses every 5th wave in Endless Mode
+                     showOverlay(bossBattleScreen, BOSS_INTRO_DELAY, () => {
+                        aliens = []; // Clear any remaining regular aliens
+                        spawnBoss();
+                    });
+                } else {
+                    spawnAliens();
+                }
+            }
+            updateWaveDisplay();
+        }
+
+        function nextWave() {
+            if (gameMode === 'endless') {
+                wave++; // Increment cumulative wave
+                showOverlay(waveCompleteScreen, WAVE_COMPLETE_DELAY, () => {
+                    spawnWave();
+                });
+                waveCompleteText.textContent = `WAVE ${wave -1} COMPLETE!`;
+            } else { // Levels Mode
+                if (wave < 5) { // Waves 1-4 of a level
+                    wave++;
+                    showOverlay(waveCompleteScreen, WAVE_COMPLETE_DELAY, () => {
+                        spawnWave();
+                    });
+                     waveCompleteText.textContent = `WAVE ${wave -1} COMPLETE!`; // Show previous wave as complete
+                } else { // Wave 5 (boss) just completed
+                    // This case is handled by boss defeat logic (proceedToNextLevel)
+                }
+            }
+            updateWaveDisplay();
+        }
+        
+        function proceedToNextLevel() {
+            // This function is called when all enemies in the current wave/boss are defeated.
+
+            updateLevelDisplay(); // Always update displays
+            updateWaveDisplay();
+
+            // Scenario 1: Just finished a regular wave (1-4) in Levels Mode
+            // In this case, simply advance to the next wave within the current level.
+            if (gameMode === 'levels' && wave < 5) {
+                wave++; // Move to the next wave within the current level
+                spawnWave(); // Immediately spawn enemies for the next wave
+            }
+            // Scenario 2: Just finished a boss wave (Wave 5) in Levels Mode
+            else if (gameMode === 'levels' && wave === 5) { 
+                if (currentLevel < TOTAL_LEVELS) {
+                    // Completed a non-final level's boss wave
+                    gameRunning = false; // Pause the game
+                    
+                    // Unlock the next level
+                    unlockLevel(currentLevel + 1); 
+                    
+                    // Update text for the Level Complete screen
+                    document.getElementById('levelCompleteTitle').textContent = `LEVEL ${currentLevel} COMPLETE!`;
+                    document.getElementById('levelCompleteMessage').textContent = `You cleared Level ${currentLevel}! Next: Level ${currentLevel + 1}!`;
+                    
+                    // Show the Level Complete screen
+                    showScreen(levelCompleteScreen);
+
+                    // Note: currentLevel and wave are NOT incremented here.
+                    // They will be set correctly when the player selects a level from the Level Select screen
+                    // (which will be `currentLevel` for this session, and `wave` will reset to 1).
+
+                } else {
+                    // Completed the FINAL level's boss wave (TOTAL_LEVELS)
+                    gameRunning = false;
+                    showScreen(victoryScreen); // Show the victory screen
+                    // The victory screen already has a button to return to the start menu.
+                }
+            }
+            // If gameMode is 'endless', proceedToNextLevel is not called based on current `gameLoop` logic
+            // (it's called only if `gameMode === 'levels'`). Endless mode continues naturally.
+
+        }
+        function updateScoreDisplay() {
+            scoreDisplay.textContent = `SCORE: ${score}`;
+        }
+        function updateLivesDisplay() {
+            livesDisplay.textContent = `LIVES: ${'❤️'.repeat(Math.max(0, player ? player.lives : 0))}`;
+        }
+        function updateWaveDisplay() {
+            if (gameMode === 'endless') {
+                waveDisplay.textContent = `WAVE: ${wave}`;
+            } else {
+                waveDisplay.textContent = `LEVEL: ${currentLevel} WAVE: ${wave}`;
+            }
+        }
+        function updateHighScoreDisplay() {
+            highScoreDisplay.textContent = `HIGH SCORE: ${highScore}`;
+        }
+
+        function addScore(points) {
+            score += points;
+            updateScoreDisplay();
+            if (score > highScore) {
+                highScore = score;
+                updateHighScoreDisplay();
+            }
+        }
+
+        let currentOverlayTimeout; // Declare a variable to store the timeout ID
+
+function showOverlay(overlayElement, duration, callback) {
+    if (!overlayElement) return;
+
+    // Clear any existing timeout for this overlay to prevent conflicts
+    if (currentOverlayTimeout) {
+        clearTimeout(currentOverlayTimeout);
+        currentOverlayTimeout = null;
+    }
+
+    isPaused = true; // Pause game logic during overlay
+    overlayElement.classList.remove('hidden'); // Show the overlay
+
+    // Only set a timeout to hide if duration is a finite number
+    if (duration !== Infinity && typeof duration === 'number' && duration > 0) {
+        currentOverlayTimeout = setTimeout(() => {
+            overlayElement.classList.add('hidden'); // Hide the overlay
+            isPaused = false; // Resume game logic
+            if (callback) callback();
+            currentOverlayTimeout = null; // Clear the timeout ID after execution
+        }, duration);
+    }
+    // If duration is Infinity or not a valid number for a timeout,
+    // the overlay will stay visible indefinitely until explicitly hidden by other code.
+}
+
+// You will now need a separate function to hide the overlay when the player clicks a button or takes action
+function hideOverlay(overlayElement) {
+    if (!overlayElement) return;
+
+    if (currentOverlayTimeout) {
+        clearTimeout(currentOverlayTimeout);
+        currentOverlayTimeout = null;
+    }
+    overlayElement.classList.add('hidden');
+    isPaused = false; // Resume game logic when hidden
+}
+        
+        function gameOver() {
+            gameRunning = false;
+            cancelAnimationFrame(animationFrameId);
+            finalScoreText.textContent = `Your Score: ${score}`;
+            showOverlay(gameOverScreen, Infinity); // Show indefinitely until button click
+        }
+
+        function gameWon() {
+            gameRunning = false;
+            cancelAnimationFrame(animationFrameId);
+            showOverlay(gameWonScreen, Infinity);
+        }
+
+        function togglePause() {
+            isPaused = !isPaused;
+            pauseButton.innerHTML = isPaused ? playIconSVG : pauseIconSVG;
+            if (!isPaused && gameRunning) {
+                gameLoop(performance.now()); // Resume loop
+            } else if (isPaused && gameRunning){
+                 cancelAnimationFrame(animationFrameId); // Stop loop if paused
+                 // Display pause message on canvas (optional)
+                 ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+                 ctx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
+                 ctx.fillStyle = "white";
+                 ctx.font = "40px Inter";
+                 ctx.textAlign = "center";
+                 ctx.fillText("PAUSED", gameCanvas.width / 2, gameCanvas.height / 2);
+            }
+        }
+        
+        let lastTime = 0;
+        function gameLoop(timestamp) {
+            if (!gameRunning) return;
+
+            const deltaTime = timestamp - lastTime;
+            lastTime = timestamp;
+
+            if (!isPaused && deltaTime > 0) { // deltaTime check for first frame
+                ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+// DRAW STARS
+ctx.fillStyle = "white";
+stars.forEach(s => {
+    s.y += s.speed;
+    if (s.y > gameCanvas.height) s.y = 0;
+    ctx.fillRect(s.x, s.y, 1.5, 1.5);
+});
+                // Update and draw player
+                if(player) {
+                    player.update(deltaTime);
+                    player.draw();
+                }
+
+                // Update and draw bullets
+                bullets = bullets.filter(bullet => {
+                    bullet.update(deltaTime);
+                    bullet.draw();
+                    // Remove bullets that go off-screen or exceed lifespan
+                    return bullet.y + bullet.height > 0 && bullet.y < gameCanvas.height &&
+                           bullet.x + bullet.width > 0 && bullet.x < gameCanvas.width &&
+                           bullet.age < bullet.lifespan;
+                });
+
+                // Update and draw aliens
+                aliens.forEach((alien, alienIndex) => {
+                    alien.update(deltaTime);
+                    alien.draw();
+                });
+
+                // Update and draw boss
+                if (boss) {
+                    boss.update(deltaTime);
+                    boss.draw();
+                }
+
+                // Collision Detection
+                // Player bullets vs Aliens
+                bullets.forEach((bullet, bulletIndex) => {
+                    if (bullet.owner === 'player') {
+                        aliens.forEach((alien, alienIndex) => {
+                            if (checkCollision(bullet, alien)) {
+                                bullets.splice(bulletIndex, 1); // Remove bullet
+                                if(alien.takeHit(1)){ // 1 damage per bullet
+                                    aliens.splice(alienIndex, 1); // Remove alien
+                                    addScore(100);
+                                }
+                            }
+                        });
+                        // Player bullets vs Boss
+                        if (boss && checkCollision(bullet, boss)) {
+                           bullets.splice(bulletIndex, 1);
+                           if(boss.takeDamage(1)){
+                               addScore(5000);
+                               const oldBoss = boss; // Store boss for defeat screen if needed
+                               boss = null;
+                               
+                               if (gameMode === 'levels') {
+                                   showOverlay(bossDefeatedScreen, BOSS_INTRO_DELAY, () => {
+                                       proceedToNextLevel();
+                                   });
+                               } else { // Endless mode boss defeated
+                                   showOverlay(bossDefeatedScreen, BOSS_INTRO_DELAY, () => {
+                                       nextWave(); // Proceed to next normal wave after boss
+                                   });
+                               }
+                           }
+                        }
+                    }
+                    // Alien/Boss bullets vs Player
+                    else if ((bullet.owner === 'alien' || bullet.owner === 'boss') && player) {
+                        if (checkCollision(bullet, player)) {
+                            bullets.splice(bulletIndex, 1);
+                            player.takeHit();
+                        }
+                    }
+                });
+                
+                // Player vs Alien collision (optional, usually bullets are the main threat)
+                // aliens.forEach(alien => {
+                //     if (player && checkCollision(player, alien)) {
+                //         player.takeHit(); 
+                //         // Potentially destroy alien too or damage it
+                //     }
+                // });
+
+
+                // Check for wave completion
+                if (!boss && aliens.length === 0 && gameRunning && !isPaused) { // Ensure game is active
+                     // Check if any overlay is active before proceeding
+                    const anyOverlayActive = [waveCompleteScreen, bossBattleScreen, bossDefeatedScreen, levelCompleteScreen].some(s => !s.classList.contains('hidden'));
+                    if (!anyOverlayActive) {
+                        // If in levels mode, and it was wave 1-4, proceed
+                        if(gameMode === 'levels' && wave < 5) {
+                            nextWave();
+                        } else if (gameMode === 'endless') { // If endless, and not a boss wave just defeated
+                            const cumulativeWave = getCurrentCumulativeWave();
+                            if (cumulativeWave % 5 !== 0) { // Don't call nextWave if it was a non-boss wave, let spawnWave handle boss check
+                                nextWave();
+                            } else if (cumulativeWave % 5 === 0 && !boss && aliens.length === 0) {
+                                // This scenario means a boss wave was just cleared by killing aliens, but boss itself didn't spawn or was already killed
+                                // This should ideally be handled by boss defeat logic.
+                                // If boss was just defeated, nextWave would have been called in boss.takeDamage.
+                                // For simplicity, let's assume boss defeat logic handles progression.
+                            }
+                        }
+                    }
+                }
+            } // end if !isPaused
+
+            if (gameRunning) {
+                animationFrameId = requestAnimationFrame(gameLoop);
+            }
+        }
+        
+        // --- Local Storage for Levels ---
+        function loadUnlockedLevels() {
+            const storedLevels = localStorage.getItem('spaceShooterUnlockedLevels');
+            if (storedLevels) {
+                try {
+                    const parsed = JSON.parse(storedLevels);
+                    if (Array.isArray(parsed) && parsed.every(num => typeof num === 'number')) {
+                         unlockedLevels = [...new Set([1, ...parsed])]; // Ensure 1 is always unlocked and unique
+                    } else {
+                        unlockedLevels = [1]; // Default if malformed
+                    }
+                } catch (e) {
+                    console.error("Error parsing unlocked levels from localStorage:", e);
+                    unlockedLevels = [1]; // Default on error
+                }
+            } else {
+                unlockedLevels = [1]; // Default if not found
+            }
+        }
+
+        function saveUnlockedLevels() {
+            localStorage.setItem('spaceShooterUnlockedLevels', JSON.stringify(unlockedLevels));
+        }
+
+        function unlockLevel(level) {
+            if (level <= TOTAL_LEVELS && !unlockedLevels.includes(level)) {
+                unlockedLevels.push(level);
+                unlockedLevels.sort((a,b) => a-b); // Keep sorted
+                saveUnlockedLevels();
+            }
+        }
+
+        function populateLevelSelect() {
+            levelGrid.innerHTML = ''; // Clear existing buttons
+            loadUnlockedLevels();
+            for (let i = 1; i <= TOTAL_LEVELS; i++) {
+                const button = document.createElement('button');
+                button.textContent = `Level ${i}`;
+                button.classList.add('menu-button', 'w-full', 'h-16', 'flex', 'items-center', 'justify-center');
+                if (unlockedLevels.includes(i)) {
+                    button.addEventListener('click', () => startGame('levels', i));
+                } else {
+                    button.classList.add('locked');
+                    button.disabled = true;
+                }
+                levelGrid.appendChild(button);
+            }
+        }
+        
+        // --- Event Listeners ---
+        // Keyboard
+        window.addEventListener('keydown', (e) => {
+            if (keys.hasOwnProperty(e.code)) keys[e.code] = true;
+            if (e.code === 'KeyP' && gameRunning) togglePause();
+        });
+        window.addEventListener('keyup', (e) => {
+            if (keys.hasOwnProperty(e.code)) keys[e.code] = false;
+        });
+
+        // Touch Controls
+        function handleTouchStart(e) {
+            e.preventDefault(); // Prevent scrolling/zooming
+            if (!gameRunning || isPaused) return;
+            const touch = e.touches[0];
+            const targetId = e.target.id;
+
+            if (targetId === 'touchLeft') touchState.left = true;
+            else if (targetId === 'touchRight') touchState.right = true;
+            else if (targetId === 'touchFire') touchState.fire = true;
+        }
+
+        function handleTouchMove(e) { // Optional: for drag-based movement if desired, not used for tap-to-move
+            e.preventDefault();
+             if (!gameRunning || isPaused) return;
+            // If you want drag control:
+            // const touch = e.touches[0];
+            // const gameRect = gameCanvas.getBoundingClientRect();
+            // const touchX = touch.clientX - gameRect.left;
+            // if (touchX < gameCanvas.width / 2) {
+            //     touchState.left = true; touchState.right = false;
+            // } else {
+            //     touchState.right = true; touchState.left = false;
+            // }
+        }
+
+        function handleTouchEnd(e) {
+            e.preventDefault();
+             // Check which touch area was released if using e.changedTouches and target
+            const releasedTargetId = e.target.id; // ID of the element where touch *started*
+
+            if(releasedTargetId === 'touchLeft') touchState.left = false;
+            if(releasedTargetId === 'touchRight') touchState.right = false;
+            if(releasedTargetId === 'touchFire') touchState.fire = false;
+            
+            // If no specific target, reset relevant states based on which touches are *still* active (more robust for multi-touch)
+            // For simplicity with current setup, just reset based on target.
+            // If all touches are up, reset all. This is simpler:
+            if (e.touches.length === 0) {
+                 touchState.left = false;
+                 touchState.right = false;
+                 // touchState.fire = false; // Continuous fire might want to persist until explicitly lifted from fire zone
+            }
+        }
+        
+        touchLeft.addEventListener('touchstart', handleTouchStart, { passive: false });
+        touchLeft.addEventListener('touchend', handleTouchEnd, { passive: false });
+        touchRight.addEventListener('touchstart', handleTouchStart, { passive: false });
+        touchRight.addEventListener('touchend', handleTouchEnd, { passive: false });
+        touchFire.addEventListener('touchstart', handleTouchStart, { passive: false });
+        touchFire.addEventListener('touchend', handleTouchEnd, { passive: false });
+
+
+        // Menu Buttons
+        endlessModeBtn.addEventListener('click', () => startGame('endless'));
+        levelsModeBtn.addEventListener('click', () => {
+            populateLevelSelect();
+            showScreen(levelSelectMenu);
+        });
+        howToPlayBtn.addEventListener('click', () => showScreen(howToPlayMenu));
+        backToMainFromHowToPlayBtn.addEventListener('click', () => showScreen(startMenu));
+        backToMainFromLevelSelectBtn.addEventListener('click', () => showScreen(startMenu));
+        
+        
+        advancedOptionsBtn.addEventListener('click', () => showScreen(advancedOptionsMenu));
+        deleteAllProgressBtn.addEventListener('click', () => {
+            confirmationModal.classList.remove('hidden'); // Show modal directly
+        });
+        backToLevelSelectFromAdvancedBtn.addEventListener('click', () => {
+            populateLevelSelect();
+            showScreen(levelSelectMenu);
+        });
+
+        confirmDeleteBtn.addEventListener('click', () => {
+            unlockedLevels = [1]; // Reset to only level 1 unlocked
+            saveUnlockedLevels();
+            confirmationModal.classList.add('hidden');
+            showScreen(startMenu); // Go back to main menu
+            populateLevelSelect(); // Refresh level select screen in background
+        });
+        cancelDeleteBtn.addEventListener('click', () => {
+            confirmationModal.classList.add('hidden');
+            // No screen change, user stays on Advanced Options or wherever they were
+        });
+ // Level Complete Screen button
+        document.getElementById('levelCompleteToSelectorButton').addEventListener('click', () => {
+            showScreen(levelSelectScreen); // Go back to the level selection
+        });
+        // In-Game Buttons
+        pauseButton.addEventListener('click', () => { if(gameRunning) togglePause(); });
+        mainMenuButton.addEventListener('click', () => {
+            gameRunning = false;
+            isPaused = false; // Ensure not paused when returning to menu
+            cancelAnimationFrame(animationFrameId);
+            showScreen(startMenu);
+        });
+        restartGameBtn.addEventListener('click', () => showScreen(startMenu)); // Goes to main menu, user can choose mode
+        playAgainBtn.addEventListener('click', () => showScreen(startMenu));
+
+
+        // Window Resize
+        function resizeCanvas() {
+            const container = document.getElementById('gameContainer');
+            if (container && gameCanvas && gameRunning) { // Only resize if game is running and elements exist
+                const oldWidth = gameCanvas.width;
+                const oldHeight = gameCanvas.height;
+
+                gameCanvas.width = container.clientWidth;
+                gameCanvas.height = container.clientHeight;
+
+                if (player) { // Adjust player position proportionally if game is active
+                    player.x = (player.x / oldWidth) * gameCanvas.width;
+                    player.y = (player.y / oldHeight) * gameCanvas.height;
+                    player.x = clamp(player.x, 0, gameCanvas.width - player.width);
+                    player.y = clamp(player.y, 0, gameCanvas.height - player.height);
+                }
+                // Could also reposition aliens/bosses if desired, but simple reset/clamp might be fine for now
+            } else if (container && gameCanvas) { // If not running, just set initial size
+                 gameCanvas.width = container.clientWidth;
+                 gameCanvas.height = container.clientHeight;
+            }
+        }
+        window.addEventListener('resize', resizeCanvas);
+        
+        // --- Initial Setup ---
+        // Ensure image smoothing is disabled from the start for crisp pixel art
+        ctx.imageSmoothingEnabled = false;
+        ctx.mozImageSmoothingEnabled = false;
+        ctx.webkitImageSmoothingEnabled = false;
+        ctx.msImageSmoothingEnabled = false;
+
+        loadUnlockedLevels();
+        showScreen(startMenu);
+        resizeCanvas(); // Initial canvas sizing based on container
+        updateHighScoreDisplay(); // Show session high score (0 initially)
+        initStars(); // This creates the stars when the page loads
+        let godMode = false;
+
+// Toggle Menu with F2 key
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'F2') {
+        const menu = document.getElementById('devMenu');
+        menu.classList.toggle('hidden');
+    }
+});
+
+function skipWave() {
+    aliens = []; // Clearing current aliens triggers your spawnWave logic automatically
+    wave++;
+    updateScoreDisplay(); // Optional: boost score to match the skip
+    console.log("Dev: Skipped to Wave " + wave);
+}
+
+function toggleGodMode() {
+    godMode = !godMode;
+    document.getElementById('godModeBtn').innerText = "God Mode: " + (godMode ? "ON" : "OFF");
+}
+
+function spawnBossNow() {
+    // If your boss logic checks for a specific wave, just set it
+    wave = 9; // Assuming boss is at wave 10
+    skipWave();
+}
+// Audio Settings State
+let sfxEnabled = true;
+let musicEnabled = true;
+
+// Toggle Functions
+function toggleSFX() {
+    sfxEnabled = !sfxEnabled;
+    const btn = document.getElementById('sfxToggle');
+    btn.innerText = sfxEnabled ? "ON" : "OFF";
+    btn.className = sfxEnabled ? "bg-blue-600 px-4 py-1 rounded-md font-bold w-20" : "bg-gray-600 px-4 py-1 rounded-md font-bold w-20";
+}
+
+function toggleMusic() {
+    musicEnabled = !musicEnabled;
+    const btn = document.getElementById('musicToggle');
+    btn.innerText = musicEnabled ? "ON" : "OFF";
+    btn.className = musicEnabled ? "bg-blue-600 px-4 py-1 rounded-md font-bold w-20" : "bg-gray-600 px-4 py-1 rounded-md font-bold w-20";
+    
+    // If you have a background music object, pause/play it here
+    // if (bgMusic) { musicEnabled ? bgMusic.play() : bgMusic.pause(); }
+}
+    </script>
+</body>
+</html>
