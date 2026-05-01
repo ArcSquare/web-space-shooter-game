@@ -428,7 +428,7 @@ document.getElementById('closeSettingsBtn').onclick = () => {
 
         const playerShipSprite = new Image();
         // Corrected path for uploaded files in Canvas environment
-        playerShipSprite.src = 'assets/ship1.png'; 
+        playerShipSprite.src = 'ship1.png'; 
 
         // Ensure the image is loaded before attempting to draw it
         playerShipSprite.onload = () => {
@@ -441,7 +441,7 @@ document.getElementById('closeSettingsBtn').onclick = () => {
         };
         const AlienShipSprite = new Image();
         // Corrected path for uploaded files in Canvas environment
-        AlienShipSprite.src = 'assets/ship2.png'; 
+        AlienShipSprite.src = 'ship2.png'; 
 
         // Ensure the image is loaded before attempting to draw it
         AlienShipSprite.onload = () => {
@@ -454,7 +454,7 @@ document.getElementById('closeSettingsBtn').onclick = () => {
         };
 const BossShipSprite = new Image();
         // Corrected path for uploaded files in Canvas environment
-        BossShipSprite.src = 'assets/ship3.png'; 
+        BossShipSprite.src = 'ship3.png'; 
 
         // Ensure the image is loaded before attempting to draw it
         BossShipSprite.onload = () => {
@@ -465,15 +465,15 @@ const BossShipSprite = new Image();
         BossShipSprite.onerror = () => {
             console.error("Failed to load Boss ship sprite!");
         };
- const shootSound = new Audio('assets/shoot.wav');
+ const shootSound = new Audio('shoot.wav');
 
         shootSound.volume = 0.5; // Adjust volume (0.0 to 1.0, 0.5 is half volume)
 
-const boomSound = new Audio('assets/boom1.wav');
+const boomSound = new Audio('boom1.wav');
 
         boomSound.volume = 0.7; // Adjust volume (0.0 to 1.0, 0.5 is half volume)
 
-const bossExplosionSound = new Audio('assets/boom2.wav'); // Or whatever you name it
+const bossExplosionSound = new Audio('boom2.wav'); // Or whatever you name it
 bossExplosionSound.volume = 0.8; // Make it a bit louder than alien explosion
 bossExplosionSound.load();
         const endlessModeBtn = document.getElementById('endlessModeBtn');
