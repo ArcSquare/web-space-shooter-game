@@ -1,6 +1,4 @@
-A web based (HTML/CSS/JS) web space shooter game designed using vibe coding. 
-it has many levels, a boss and a beautiful UI and HUD with ships, parallax background and details. 
-it runs in your browser without any installation. Just Plug & Play! 
-Play It Here Now! : https://arcsquare.github.io/web-space-shooter-game/
-Free for any contributions! You can contribut to this project if you want.
-There are some bugs and incorrect stuff. You can help fix it!
+A web based web space shooter game designed using vibe coding. 
+A single self contained HTML file contains the code.
+Runs in web browsers
+<img width="1038" height="594" alt="Capture" src="https://github.com/user-attachments/assets/db1b8b05-2af1-4932-9ad1-d02a08c65ef5" />
